@@ -22,7 +22,7 @@ async function initDashboard() {
         // Show admin panel button for admin users
         if (user.role === "admin") {
             const adminBtn = document.getElementById("adminPanelBtn");
-            if (adminBtn) adminBtn.style.display = "inline-block";
+            if (adminBtn) adminBtn.style.display = "flex";
         }
 
         // If on admin dashboard page, load user list
@@ -167,6 +167,15 @@ function openCreateUserModal() {
 function closeModal() {
     const m = document.getElementById("createUserModal");
     if (m) m.remove();
+}
+
+function filterAdminTable() {
+    const query = document.getElementById('adminSearchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#adminUserTable tr');
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(query) ? '' : 'none';
+    });
 }
 
 window.addEventListener("DOMContentLoaded", initDashboard);

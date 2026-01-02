@@ -4,12 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASESS | View Report</title>
+    <meta name="description" content="View detailed eye screening report with AI-powered diagnosis.">
+    <link rel="icon" href="/static/assets/images/logo.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/pages.css">
     <link rel="stylesheet" href="/static/css/components.css">
     <link rel="stylesheet" href="/static/css/dashboard.css">
 </head>
-<body>
+<body class="bg-report">
     <div id="main-wrapper">
         <div id="header-placeholder"></div>
 
@@ -19,101 +22,95 @@
                     <h2 style="margin:0;">Screening Report</h2>
                     <div style="display:flex; gap:10px;">
                         <button class="btn btn-primary" onclick="window.print()" style="padding:8px 20px; font-size:0.9rem;">🖨️ Print</button>
-                        <a href="/static/history.html" class="btn btn-primary" style="padding:8px 20px; font-size:0.9rem; background:var(--card-bg); border:1px solid rgba(171,209,198,0.3);">← Back to History</a>
+                        <a href="/static/history.html" class="btn btn-outline" style="padding:8px 20px; font-size:0.9rem;">← Back to History</a>
                     </div>
                 </div>
             </div>
 
-            <div class="report-grid">
-                <!-- Left: Image -->
+            <!-- Loading state -->
+            <div id="reportLoading" class="card" style="text-align:center; padding:40px;">
+                <i class="ri-loader-4-line ri-spin" style="font-size:2rem; color:#42a5f5;"></i>
+                <p style="margin-top:12px;">Loading report data...</p>
+            </div>
+
+            <!-- Report content (hidden until loaded) -->
+            <div id="reportContent" style="display:none;">
+                <div class="report-grid">
+                    <!-- Left: Image -->
+                    <div class="card">
+                        <h3>Eye Image</h3>
+                        <div class="report-img-wrap">
+                            <img id="rptImage" style="max-width:100%; border-radius:10px; display:none;" alt="Scanned Eye">
+                            <p id="rptNoImage" style="color:var(--card-para);">No image available</p>
+                        </div>
+                    </div>
+
+                    <!-- Right: Diagnosis Details -->
+                    <div class="card">
+                        <h3>Diagnosis Details</h3>
+                        <div class="detail-row">
+                            <span class="detail-label">Patient Name</span>
+                            <span class="detail-value" id="rptPatientName">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Patient ID</span>
+                            <span class="detail-value" id="rptPatientId">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Date</span>
+                            <span class="detail-value" id="rptDate">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Detected Condition</span>
+                            <span class="detail-value" id="rptCondition">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Confidence</span>
+                            <span class="detail-value" id="rptConfidence">—</span>
+                        </div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="rptConfBar" style="width:0%;"></div>
+                        </div>
+                        <div class="detail-row" style="margin-top:12px;">
+                            <span class="detail-label">Status</span>
+                            <span class="detail-value" id="rptStatus">—</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Screened By</span>
+                            <span class="detail-value" id="rptDoctor">—</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Recommendations (dynamic) -->
                 <div class="card">
-                    <h3>Eye Image</h3>
-                    <div class="report-img-wrap">
-                        <p style="color:var(--card-para);">No image available</p>
-                    </div>
+                    <h3><i class="ri-robot-line" style="margin-right:6px;"></i> AI Recommendations</h3>
+                    <ul id="rptRecommendations" style="padding-left:20px; line-height:2; color:var(--paragraph); list-style:disc;"></ul>
                 </div>
 
-                <!-- Right: Diagnosis Details -->
+                <!-- Severity Breakdown (dynamic) -->
                 <div class="card">
-                    <h3>Diagnosis Details</h3>
-                    <div class="detail-row">
-                        <span class="detail-label">Patient Name</span>
-                        <span class="detail-value" id="rptPatientName">Ramesh Sharma</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Patient ID</span>
-                        <span class="detail-value" id="rptPatientId">#123456</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Date</span>
-                        <span class="detail-value" id="rptDate">2024-04-20</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Detected Condition</span>
-                        <span class="detail-value text-danger" id="rptCondition">Keratoconus</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Confidence</span>
-                        <span class="detail-value" id="rptConfidence">98%</span>
-                    </div>
-                    <div class="confidence-bar">
-                        <div class="confidence-fill" id="rptConfBar" style="width:98%;"></div>
-                    </div>
-                    <div class="detail-row" style="margin-top:12px;">
-                        <span class="detail-label">Status</span>
-                        <span class="detail-value text-warning" id="rptStatus">Pending Review</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="detail-label">Screened By</span>
-                        <span class="detail-value" id="rptDoctor">Dr. Smith</span>
+                    <h3>Condition Severity Analysis</h3>
+                    <div id="rptSeverityBars" style="margin-top:16px;"></div>
+                </div>
+
+                <!-- Doctor's Notes -->
+                <div class="card">
+                    <h3>Doctor's Notes & Review</h3>
+                    <div class="notes-label"><span>📝</span> <span id="notesAccessLabel">Loading...</span></div>
+                    <textarea class="notes-area" id="doctorNotes" placeholder="Add clinical observations, recommendations, treatment plan..." disabled></textarea>
+                    <div style="display:flex; gap:10px; margin-top:12px;">
+                        <button class="btn btn-primary" id="saveNotesBtn" style="display:none; padding:8px 24px; font-size:0.9rem;">Save Notes</button>
+                        <button class="btn btn-outline" id="verifyBtn" style="display:none; padding:8px 24px; font-size:0.9rem;">✓ Mark as Verified</button>
                     </div>
                 </div>
             </div>
 
-            <!-- AI Recommendations -->
-            <div class="card">
-                <h3>AI Recommendations</h3>
-                <ul style="padding-left:20px; line-height:2; color:var(--card-para);">
-                    <li>Refer patient to corneal specialist for topographic mapping.</li>
-                    <li>Consider cross-linking procedure if progressive thinning is confirmed.</li>
-                    <li>Schedule follow-up screening in 30 days to monitor progression.</li>
-                    <li>Document findings and update patient record in the system.</li>
-                </ul>
-            </div>
-
-            <!-- Severity Breakdown -->
-            <div class="card">
-                <h3>Condition Severity Analysis</h3>
-                <div style="margin-top:16px;">
-                    <div class="condition-row">
-                        <span class="condition-name">Keratoconus</span>
-                        <div class="bar-track"><div class="bar-fill" style="width:98%; background:linear-gradient(90deg,#e16162,#ff8585);"></div></div>
-                        <span class="condition-pct">98%</span>
-                    </div>
-                    <div class="condition-row">
-                        <span class="condition-name">Pterygium</span>
-                        <div class="bar-track"><div class="bar-fill" style="width:12%;"></div></div>
-                        <span class="condition-pct">12%</span>
-                    </div>
-                    <div class="condition-row">
-                        <span class="condition-name">Cataract</span>
-                        <div class="bar-track"><div class="bar-fill" style="width:5%;"></div></div>
-                        <span class="condition-pct">5%</span>
-                    </div>
-                    <div class="condition-row">
-                        <span class="condition-name">Normal</span>
-                        <div class="bar-track"><div class="bar-fill" style="width:2%; background:#4ade80;"></div></div>
-                        <span class="condition-pct">2%</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Doctor's Notes -->
-            <div class="card">
-                <h3>Doctor's Notes & Review</h3>
-                <div class="notes-label"><span>📝</span> <span id="notesAccessLabel">Loading...</span></div>
-                <textarea class="notes-area" id="doctorNotes" placeholder="Add clinical observations, recommendations, treatment plan..." disabled></textarea>
-                <button class="btn btn-primary" id="saveNotesBtn" style="margin-top:12px; display:none; padding:8px 24px; font-size:0.9rem;">Save Notes</button>
+            <!-- Error state -->
+            <div id="reportError" class="card" style="display:none; text-align:center; padding:40px;">
+                <p style="font-size:2rem; margin-bottom:12px;">⚠️</p>
+                <p id="reportErrorMsg" style="color:#ef4444;">Failed to load report.</p>
+                <a href="/static/history.html" class="btn btn-primary" style="margin-top:16px; display:inline-block;">Back to History</a>
             </div>
         </div>
 
@@ -124,30 +121,181 @@
     <script src="/static/js/toast.js"></script>
     <script src="/static/js/script.js"></script>
     <script>
-        // Role-based notes: only doctors/admins can write
+        // Condition-specific recommendations
+        const RECOMMENDATIONS = {
+            'Cataract': [
+                'Refer patient to ophthalmologist for detailed slit-lamp examination.',
+                'Consider phacoemulsification surgery if vision is significantly impaired.',
+                'Monitor lens opacity progression with regular follow-ups every 3-6 months.',
+                'Advise patient on UV protection and lifestyle modifications.',
+            ],
+            'Conjunctivitis': [
+                'Determine if viral, bacterial, or allergic and prescribe accordingly.',
+                'Advise warm compresses and artificial tears for symptomatic relief.',
+                'If bacterial, consider topical antibiotic eye drops.',
+                'Ensure proper hand hygiene to prevent spreading.',
+            ],
+            'Eyelid': [
+                'Examine for blepharitis, chalazion, or lid margin disease.',
+                'Recommend warm compress therapy and lid hygiene routine.',
+                'Consider referral to oculoplastics if structural abnormality is found.',
+                'Schedule follow-up in 2-4 weeks to assess treatment response.',
+            ],
+            'Normal': [
+                'No abnormalities detected. Eye appears healthy.',
+                'Recommend routine eye examination every 1-2 years.',
+                'Advise patient on maintaining good eye health practices.',
+                'Document baseline findings for future comparisons.',
+            ],
+            'Uveitis': [
+                'Urgent referral to uveitis specialist recommended.',
+                'Consider topical corticosteroid and cycloplegic drops.',
+                'Investigate for underlying systemic causes (autoimmune, infectious).',
+                'Monitor intraocular pressure and schedule close follow-up.',
+            ],
+            'pterygium': [
+                'Monitor size and progression with serial photographs.',
+                'Advise UV protection with quality sunglasses.',
+                'Consider surgical excision if pterygium encroaches on visual axis.',
+                'Recommend artificial tears for irritation and dryness.',
+            ]
+        };
+
         (async () => {
-            const token = localStorage.getItem('access_token');
-            if (token) {
-                try {
-                    const u = await apiRequest('/users/me', 'GET');
-                    if (u.role === 'doctor' || u.role === 'admin') {
-                        document.getElementById('doctorNotes').disabled = false;
-                        document.getElementById('saveNotesBtn').style.display = 'inline-block';
-                        document.getElementById('notesAccessLabel').textContent = 'Add your clinical observations';
-                    } else {
-                        document.getElementById('notesAccessLabel').textContent = 'Only doctors can add notes (read-only for staff)';
+            const params = new URLSearchParams(window.location.search);
+            const scanId = params.get('id');
+
+            if (!scanId) {
+                document.getElementById('reportLoading').style.display = 'none';
+                document.getElementById('reportError').style.display = 'block';
+                document.getElementById('reportErrorMsg').textContent = 'No scan ID provided. Please access reports from History.';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/ai/scans/${scanId}`);
+                if (!response.ok) throw new Error('Scan not found');
+                const scan = await response.json();
+
+                // Fill report data
+                document.getElementById('rptPatientName').textContent = scan.patient_name;
+                document.getElementById('rptPatientId').textContent = scan.patient_id || '—';
+                document.getElementById('rptDate').textContent = scan.scan_date ? new Date(scan.scan_date).toLocaleDateString() : '—';
+
+                const condEl = document.getElementById('rptCondition');
+                condEl.textContent = scan.prediction;
+                condEl.className = scan.prediction === 'Normal' ? 'detail-value text-success' : 'detail-value text-danger';
+
+                document.getElementById('rptConfidence').textContent = scan.confidence + '%';
+                document.getElementById('rptConfBar').style.width = scan.confidence + '%';
+
+                const statusEl = document.getElementById('rptStatus');
+                statusEl.textContent = scan.status;
+                statusEl.className = scan.status === 'Verified' ? 'detail-value text-success' : 'detail-value text-warning';
+
+                document.getElementById('rptDoctor').textContent = scan.screened_by || '—';
+
+                // Image
+                if (scan.image_data) {
+                    const img = document.getElementById('rptImage');
+                    img.src = 'data:image/png;base64,' + scan.image_data;
+                    img.style.display = 'block';
+                    document.getElementById('rptNoImage').style.display = 'none';
+                }
+
+                // Notes
+                if (scan.notes) {
+                    document.getElementById('doctorNotes').value = scan.notes;
+                }
+
+                // Recommendations
+                const recList = document.getElementById('rptRecommendations');
+                const recs = RECOMMENDATIONS[scan.prediction] || RECOMMENDATIONS['Normal'];
+                recs.forEach(r => {
+                    const li = document.createElement('li');
+                    li.textContent = r;
+                    recList.appendChild(li);
+                });
+
+                // Severity bars
+                const barsDiv = document.getElementById('rptSeverityBars');
+                if (scan.all_probabilities) {
+                    const sorted = Object.entries(scan.all_probabilities).sort((a,b) => b[1] - a[1]);
+                    sorted.forEach(([cls, pct]) => {
+                        const barColor = cls === 'Normal'
+                            ? 'background:#16a34a;'
+                            : (pct > 50 ? 'background:linear-gradient(90deg,#ef4444,#f87171);' : '');
+                        barsDiv.innerHTML += `
+                            <div class="condition-row">
+                                <span class="condition-name">${cls}</span>
+                                <div class="bar-track"><div class="bar-fill" style="width:${pct}%; ${barColor}"></div></div>
+                                <span class="condition-pct">${pct}%</span>
+                            </div>`;
+                    });
+                }
+
+                document.getElementById('reportLoading').style.display = 'none';
+                document.getElementById('reportContent').style.display = 'block';
+
+                // Role-based notes access
+                const token = localStorage.getItem('access_token');
+                if (token) {
+                    try {
+                        const u = await apiRequest('/users/me', 'GET');
+                        if (u.role === 'doctor' || u.role === 'admin') {
+                            document.getElementById('doctorNotes').disabled = false;
+                            document.getElementById('saveNotesBtn').style.display = 'inline-block';
+                            document.getElementById('verifyBtn').style.display = 'inline-block';
+                            document.getElementById('notesAccessLabel').textContent = 'Add your clinical observations';
+                        } else {
+                            document.getElementById('notesAccessLabel').textContent = 'Only doctors can add notes (read-only for staff)';
+                        }
+                    } catch(e) {
+                        document.getElementById('notesAccessLabel').textContent = 'Login required to add notes';
                     }
-                } catch(e) {
+                } else {
                     document.getElementById('notesAccessLabel').textContent = 'Login required to add notes';
                 }
-            } else {
-                document.getElementById('notesAccessLabel').textContent = 'Login required to add notes';
+
+                // Save notes handler
+                document.getElementById('saveNotesBtn').addEventListener('click', async () => {
+                    try {
+                        const response = await fetch(`/ai/scans/${scanId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ notes: document.getElementById('doctorNotes').value })
+                        });
+                        if (response.ok) showToast('Notes saved successfully', 'success');
+                        else throw new Error('Failed to save');
+                    } catch(e) {
+                        showToast('Error saving notes: ' + e.message, 'error');
+                    }
+                });
+
+                // Verify handler
+                document.getElementById('verifyBtn').addEventListener('click', async () => {
+                    try {
+                        const response = await fetch(`/ai/scans/${scanId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: 'Verified' })
+                        });
+                        if (response.ok) {
+                            statusEl.textContent = 'Verified';
+                            statusEl.className = 'detail-value text-success';
+                            showToast('Report marked as Verified', 'success');
+                        }
+                    } catch(e) {
+                        showToast('Error updating status', 'error');
+                    }
+                });
+
+            } catch(err) {
+                document.getElementById('reportLoading').style.display = 'none';
+                document.getElementById('reportError').style.display = 'block';
+                document.getElementById('reportErrorMsg').textContent = 'Error: ' + err.message;
             }
         })();
-
-        document.getElementById('saveNotesBtn').addEventListener('click', () => {
-            showToast('Notes saved successfully', 'success');
-        });
     </script>
 </body>
 </html>

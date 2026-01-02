@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASESS | Hospital Analytics</title>
+    <meta name="description" content="View hospital analytics, condition distribution, and screening trends.">
+    <link rel="icon" href="/static/assets/images/logo.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/pages.css">
     <link rel="stylesheet" href="/static/css/components.css">
@@ -15,17 +18,20 @@
 
         <div class="container page-container">
             <div class="analytics-header">
-                <h2>Hospital Analytics</h2>
+                <h2 style="color: #ffffff;"><i class="ri-bar-chart-grouped-line" style="margin-right:8px;"></i>Hospital Analytics</h2>
+                <p style="color:rgba(255,255,255,0.7); margin-top:4px;">Real-time data from AI screening results</p>
             </div>
 
             <!-- Stat Cards -->
-            <div class="stat-row">
+            <div class="stat-row" id="statCards">
                 <div class="big-stat">
-                    <div class="stat-val blue">1,245</div>
+                    <div class="stat-val blue" id="statTotalScans">
+                        <i class="ri-loader-4-line ri-spin" style="font-size:1.2rem;"></i>
+                    </div>
                     <div class="stat-lbl">Total Scans</div>
                 </div>
                 <div class="big-stat">
-                    <div class="stat-val red">37%</div>
+                    <div class="stat-val red" id="statAbnormal">—</div>
                     <div class="stat-lbl">Abnormal Cases</div>
                 </div>
             </div>
@@ -37,13 +43,21 @@
                     <div class="chart-canvas-wrap">
                         <canvas id="conditionChart"></canvas>
                     </div>
+                    <p id="conditionNoData" style="display:none; text-align:center; color:var(--card-para); padding:20px;">No scan data available yet.</p>
                 </div>
                 <div class="chart-card">
-                    <h3>Screening Trends</h3>
+                    <h3>Screening Trends (Last 7 Days)</h3>
                     <div class="chart-canvas-wrap">
                         <canvas id="trendChart"></canvas>
                     </div>
+                    <p id="trendNoData" style="display:none; text-align:center; color:var(--card-para); padding:20px;">No scan data available yet.</p>
                 </div>
+            </div>
+
+            <!-- Condition Breakdown Table -->
+            <div class="card" id="conditionBreakdown" style="display:none;">
+                <h3><i class="ri-list-check" style="margin-right:6px;"></i> Condition Breakdown</h3>
+                <div id="conditionBarsContainer" style="margin-top:16px;"></div>
             </div>
         </div>
 
@@ -52,60 +66,138 @@
 
     <script src="/static/js/script.js"></script>
     <script>
-        // Condition Distribution – Donut Chart
-        new Chart(document.getElementById('conditionChart'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Conjunctivitis', 'Pterygium', 'Corneal Opacity', 'Uveitis', 'Normal'],
-                datasets: [{
-                    data: [30, 22, 15, 10, 23],
-                    backgroundColor: ['#004643', '#60a5fa', '#f9bc60', '#e16162', '#4ade80'],
-                    borderWidth: 2,
-                    borderColor: '#0a2e2d',
-                }]
-            },
-            options: {
-                responsive: true,
-                cutout: '55%',
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: { boxWidth: 14, padding: 12, font: { size: 12 }, color: '#abd1c6' }
-                    }
-                }
-            }
-        });
+        let condChart = null;
+        let trendChartObj = null;
 
-        // Screening Trends – Line Chart
-        new Chart(document.getElementById('trendChart'), {
-            type: 'line',
-            data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                datasets: [{
-                    label: 'Daily Scans',
-                    data: [45, 60, 52, 68, 70, 30, 20],
-                    borderColor: '#f9bc60',
-                    backgroundColor: 'rgba(249, 188, 96, 0.1)',
-                    fill: true,
-                    tension: 0.3,
-                    pointRadius: 5,
-                    pointBackgroundColor: '#f9bc60',
-                    borderWidth: 2,
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: { beginAtZero: false, min: 15, grid: { color: 'rgba(171,209,198,0.1)' }, ticks: { color: '#abd1c6' } },
-                    x: { grid: { display: false }, ticks: { color: '#abd1c6' } }
-                },
-                plugins: {
-                    legend: {
-                        labels: { font: { size: 12 }, color: '#abd1c6' }
-                    }
+        const CONDITION_COLORS = {
+            'Cataract': '#1565c0',
+            'Conjunctivitis': '#42a5f5',
+            'Eyelid': '#64b5f6',
+            'Normal': '#16a34a',
+            'Uveitis': '#ef4444',
+            'pterygium': '#f59e0b'
+        };
+
+        async function loadAnalytics() {
+            try {
+                const response = await fetch('/ai/analytics');
+                if (!response.ok) throw new Error('Failed to fetch analytics');
+                const data = await response.json();
+
+                // Stat cards
+                document.getElementById('statTotalScans').textContent = data.total_scans.toLocaleString();
+                document.getElementById('statAbnormal').textContent = data.abnormal_percentage + '%';
+
+                // Condition Distribution Chart
+                const condLabels = Object.keys(data.condition_distribution);
+                const condValues = Object.values(data.condition_distribution);
+
+                if (condLabels.length > 0) {
+                    const condColors = condLabels.map(l => CONDITION_COLORS[l] || '#94a3b8');
+                    if (condChart) condChart.destroy();
+                    condChart = new Chart(document.getElementById('conditionChart'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: condLabels,
+                            datasets: [{
+                                data: condValues,
+                                backgroundColor: condColors,
+                                borderWidth: 2,
+                                borderColor: '#ffffff',
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            cutout: '55%',
+                            plugins: {
+                                legend: {
+                                    position: 'top',
+                                    labels: { boxWidth: 14, padding: 12, font: { size: 12, family: 'Montserrat' }, color: '#475569' }
+                                }
+                            }
+                        }
+                    });
+
+                    // Condition breakdown bars
+                    const total = condValues.reduce((a,b) => a+b, 0);
+                    const barsDiv = document.getElementById('conditionBarsContainer');
+                    barsDiv.innerHTML = '';
+                    condLabels.forEach((cls, i) => {
+                        const pct = total > 0 ? ((condValues[i] / total) * 100).toFixed(1) : 0;
+                        const color = CONDITION_COLORS[cls] || '#94a3b8';
+                        barsDiv.innerHTML += `
+                            <div class="condition-row">
+                                <span class="condition-name">${cls}</span>
+                                <div class="bar-track"><div class="bar-fill" style="width:${pct}%; background:${color};"></div></div>
+                                <span class="condition-pct">${condValues[i]} (${pct}%)</span>
+                            </div>`;
+                    });
+                    document.getElementById('conditionBreakdown').style.display = 'block';
+                } else {
+                    document.getElementById('conditionChart').style.display = 'none';
+                    document.getElementById('conditionNoData').style.display = 'block';
                 }
+
+                // Screening Trends Chart
+                const trendLabels = Object.keys(data.daily_scans);
+                const trendValues = Object.values(data.daily_scans);
+
+                if (trendLabels.length > 0) {
+                    if (trendChartObj) trendChartObj.destroy();
+                    trendChartObj = new Chart(document.getElementById('trendChart'), {
+                        type: 'line',
+                        data: {
+                            labels: trendLabels,
+                            datasets: [{
+                                label: 'Daily Scans',
+                                data: trendValues,
+                                borderColor: '#1565c0',
+                                backgroundColor: 'rgba(21, 101, 192, 0.08)',
+                                fill: true,
+                                tension: 0.4,
+                                pointRadius: 5,
+                                pointBackgroundColor: '#1565c0',
+                                borderWidth: 2,
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: { color: 'rgba(226,232,240,0.6)' },
+                                    ticks: { color: '#64748b', font: { family: 'Montserrat' }, stepSize: 1 }
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: { color: '#64748b', font: { family: 'Montserrat' } }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    labels: { font: { size: 12, family: 'Montserrat' }, color: '#475569' }
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    document.getElementById('trendChart').style.display = 'none';
+                    document.getElementById('trendNoData').style.display = 'block';
+                }
+
+            } catch(err) {
+                document.getElementById('statTotalScans').textContent = '—';
+                document.getElementById('statAbnormal').textContent = '—';
+                document.getElementById('conditionChart').style.display = 'none';
+                document.getElementById('conditionNoData').style.display = 'block';
+                document.getElementById('conditionNoData').textContent = '⚠️ Could not load analytics. ' + err.message;
+                document.getElementById('trendChart').style.display = 'none';
+                document.getElementById('trendNoData').style.display = 'block';
+                document.getElementById('trendNoData').textContent = '⚠️ Could not load trends.';
             }
-        });
+        }
+
+        loadAnalytics();
     </script>
 </body>
 </html>

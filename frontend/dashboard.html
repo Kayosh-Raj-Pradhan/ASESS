@@ -4,6 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Admin Panel - ASESS</title>
+    <meta name="description" content="ASESS Admin Panel - Manage users and system settings.">
+    <link rel="icon" href="/static/assets/images/logo.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
     <link rel="stylesheet" href="/static/css/style.css" />
     <link rel="stylesheet" href="/static/css/pages.css" />
     <link rel="stylesheet" href="/static/css/dashboard.css" />
@@ -23,7 +26,8 @@
             <section class="card">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
                     <h3 style="margin:0;">User Management</h3>
-                    <div style="display:flex; gap:10px;">
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <input type="text" id="adminSearchInput" class="search-input" placeholder="🔍 Search users..." oninput="filterAdminTable()">
                         <button class="btn btn-primary" style="padding:8px 20px; font-size:0.9rem; background:#16a34a;" onclick="openCreateUserModal()">+ Create User</button>
                         <a href="/static/index.html" class="btn btn-primary" style="padding:8px 20px; font-size:0.9rem;">← Back to Dashboard</a>
                     </div>
@@ -42,7 +46,7 @@
                             </tr>
                         </thead>
                         <tbody id="adminUserTable">
-                            <tr><td colspan="7" style="text-align:center; color:#888;">Loading users...</td></tr>
+                            <tr><td colspan="7" style="text-align:center; color:#94a3b8;">Loading users...</td></tr>
                         </tbody>
                     </table>
                 </div>

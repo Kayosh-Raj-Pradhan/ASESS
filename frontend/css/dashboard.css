@@ -14,9 +14,9 @@
 
 .info-list li {
     margin-bottom: 8px;
-    color: var(--card-para, #abd1c6);
+    color: var(--paragraph, #475569);
 }
 
 .info-list li strong {
-    color: var(--card-head, #fffffe);
+    color: var(--headline, #1a2e5a);
 }

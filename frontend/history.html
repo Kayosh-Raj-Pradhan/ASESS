@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASESS | Scan History</title>
+    <meta name="description" content="Browse past eye screening records and eye test results.">
+    <link rel="icon" href="/static/assets/images/logo.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/pages.css">
     <link rel="stylesheet" href="/static/css/dashboard.css">
@@ -13,72 +16,31 @@
     <div id="main-wrapper">
         <div id="header-placeholder"></div>
         <div class="container page-container">
-            <!-- Scan History -->
+            <!-- AI Scan History (Real Data) -->
             <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h2>Patient Screening History</h2>
-                    <button class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;">Refresh Records</button>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+                    <h2><i class="ri-scan-line" style="margin-right:8px;"></i>AI Screening History</h2>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <input type="text" id="scanSearchInput" class="search-input" placeholder="🔍 Search scans..." oninput="filterScanTable()">
+                        <button class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;" onclick="loadScanHistory()"><i class="ri-refresh-line"></i> Refresh</button>
+                    </div>
                 </div>
-                <div style="overflow-x: auto;">
-                    <table class="history-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Patient Name</th>
-                                <th>Patient ID</th>
-                                <th>Condition</th>
-                                <th>Confidence</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>2024-04-20</td>
-                                <td>Ramesh Sharma</td>
-                                <td>#123456</td>
-                                <td class="text-danger"><strong>Keratoconus</strong></td>
-                                <td>98%</td>
-                                <td class="text-warning">Pending Review</td>
-                                <td><a href="/static/report.html" class="table-action">View Report</a></td>
-                            </tr>
-                            <tr>
-                                <td>2024-04-19</td>
-                                <td>Sita Devi</td>
-                                <td>#123440</td>
-                                <td class="text-success"><strong>Healthy</strong></td>
-                                <td>99%</td>
-                                <td class="text-success">Verified</td>
-                                <td><a href="/static/report.html" class="table-action">View Report</a></td>
-                            </tr>
-                            <tr>
-                                <td>2024-04-18</td>
-                                <td>Hari Prasad</td>
-                                <td>#123412</td>
-                                <td class="text-warning"><strong>Pterygium</strong></td>
-                                <td>92%</td>
-                                <td class="text-warning">Pending Review</td>
-                                <td><a href="/static/report.html" class="table-action">View Report</a></td>
-                            </tr>
-                            <tr>
-                                <td>2024-04-17</td>
-                                <td>Gita Adhikari</td>
-                                <td>#123390</td>
-                                <td class="text-success"><strong>Healthy</strong></td>
-                                <td>97%</td>
-                                <td class="text-success">Verified</td>
-                                <td><a href="/static/report.html" class="table-action">View Report</a></td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div id="scanHistoryContent">
+                    <div style="text-align:center; padding:32px;">
+                        <i class="ri-loader-4-line ri-spin" style="font-size:2rem; color:#42a5f5;"></i>
+                        <p style="margin-top:12px; color:var(--card-para);">Loading scan history...</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- Eye Test History -->
+            <!-- Eye Test History (localStorage) -->
             <div class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                    <h2>👁️ General Eye Test History</h2>
-                    <a href="/static/test.html" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;">+ New Eye Test</a>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+                    <h2><i class="ri-eye-line" style="margin-right:8px;"></i>General Eye Test History</h2>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <input type="text" id="eyeTestSearchInput" class="search-input" placeholder="🔍 Search eye tests..." oninput="filterEyeTestTable()">
+                        <a href="/static/test.html" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;">+ New Eye Test</a>
+                    </div>
                 </div>
                 <div id="eyeTestHistoryContent">
                     <p style="color:var(--card-para); text-align:center; padding:20px;">Loading eye test history...</p>
@@ -89,6 +51,73 @@
     </div>
     <script src="/static/js/script.js"></script>
     <script>
+        // ─── AI Scan History (from backend API) ───
+        async function loadScanHistory() {
+            const container = document.getElementById('scanHistoryContent');
+            try {
+                const response = await fetch('/ai/scans');
+                if (!response.ok) throw new Error('Failed to fetch');
+                const scans = await response.json();
+
+                if (scans.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:32px 20px;">
+                            <p style="font-size:2rem; margin-bottom:12px;">📷</p>
+                            <p style="color:var(--card-para); font-size:0.95rem;">No AI scan records yet.</p>
+                            <a href="/static/capture.html" class="btn btn-primary" style="margin-top:16px; padding:10px 28px; display:inline-block;">Start First Scan</a>
+                        </div>`;
+                    return;
+                }
+
+                let html = `
+                    <div style="overflow-x:auto;">
+                        <table class="history-table" id="scanTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Patient Name</th>
+                                    <th>Patient ID</th>
+                                    <th>Condition</th>
+                                    <th>Confidence</th>
+                                    <th>Status</th>
+                                    <th>Screened By</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+                scans.forEach(s => {
+                    const date = s.scan_date ? new Date(s.scan_date).toLocaleDateString() : '—';
+                    const condClass = s.prediction === 'Normal' ? 'text-success' : 'text-danger';
+                    const statusClass = s.status === 'Verified' ? 'text-success' : 'text-warning';
+                    html += `
+                        <tr>
+                            <td>${date}</td>
+                            <td><strong>${s.patient_name}</strong></td>
+                            <td>${s.patient_id || '—'}</td>
+                            <td class="${condClass}"><strong>${s.prediction}</strong></td>
+                            <td>${s.confidence}%</td>
+                            <td class="${statusClass}">${s.status}</td>
+                            <td>${s.screened_by || '—'}</td>
+                            <td><a href="/static/report.html?id=${s.id}" class="table-action">View Report</a></td>
+                        </tr>`;
+                });
+
+                html += '</tbody></table></div>';
+                container.innerHTML = html;
+
+            } catch(err) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:32px;">
+                        <p style="color:#ef4444;">⚠️ Could not load scan history. Is the server running?</p>
+                        <p style="color:var(--card-para); font-size:0.85rem; margin-top:8px;">${err.message}</p>
+                    </div>`;
+            }
+        }
+
+        loadScanHistory();
+
+        // ─── Eye Test History (localStorage) ───
         function loadEyeTestHistory() {
             const container = document.getElementById('eyeTestHistoryContent');
             const history = JSON.parse(localStorage.getItem('eyeTestHistory') || '[]');
@@ -103,12 +132,10 @@
                 return;
             }
 
-            // Reverse so newest first
             const sorted = [...history].reverse();
-
             let tableHtml = `
                 <div style="overflow-x:auto;">
-                    <table class="history-table">
+                    <table class="history-table" id="eyeTestTable">
                         <thead>
                             <tr>
                                 <th>Date</th>
@@ -147,6 +174,27 @@
         }
 
         loadEyeTestHistory();
+
+        // ─── Search Filters ───
+        function filterScanTable() {
+            const query = document.getElementById('scanSearchInput').value.toLowerCase();
+            const table = document.getElementById('scanTable');
+            if (!table) return;
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+            });
+        }
+
+        function filterEyeTestTable() {
+            const query = document.getElementById('eyeTestSearchInput').value.toLowerCase();
+            const table = document.getElementById('eyeTestTable');
+            if (!table) return;
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(row => {
+                row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
+            });
+        }
     </script>
 </body>
 </html>

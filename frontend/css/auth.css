@@ -2,12 +2,12 @@
 
 body.auth-bg {
     margin: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-image: linear-gradient(rgba(10,25,47,0.85), rgba(10,25,47,0.95)),
-                url('https://wallpaperaccess.com/full/3275630.jpg');
+    font-family: var(--font, 'Montserrat', sans-serif);
+    background-image: linear-gradient(rgba(10,25,47,0.85), rgba(10,25,47,0.95)), url('https://wallpaperaccess.com/full/3275630.jpg');
     background-size: cover;
-    background-position: center;
-    height: 100vh;
+    background-position: center center;
+    background-attachment: fixed;
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -22,27 +22,33 @@ body.auth-bg {
 }
 
 .auth-card {
-    background: var(--card-bg, #004643);
-    border: 1px solid rgba(171, 209, 198, 0.2);
-    border-radius: 16px;
-    padding: 40px;
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 44px 40px;
     width: 100%;
     max-width: 440px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.25);
+    animation: authFadeIn 0.5s ease;
+}
+
+@keyframes authFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .auth-card h2 {
     text-align: center;
     font-size: 1.6rem;
-    color: var(--card-head, #fffffe);
+    color: var(--navy, #1a2e5a);
     margin-bottom: 4px;
+    font-weight: 700;
 }
 
 .auth-card .subtitle {
     text-align: center;
-    color: var(--card-para, #abd1c6);
+    color: var(--card-para, #64748b);
     font-size: 0.9rem;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
 }
 
 .form-group {
@@ -54,34 +60,37 @@ body.auth-bg {
     margin-bottom: 6px;
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--card-para, #abd1c6);
+    color: var(--subhead, #2d4a7a);
 }
 
 .form-group input,
 .form-group select {
     width: 100%;
-    padding: 12px;
-    border: 1px solid rgba(171, 209, 198, 0.25);
-    border-radius: 8px;
+    padding: 12px 14px;
+    border: 1.5px solid var(--card-border, #e2e8f0);
+    border-radius: 10px;
     font-size: 0.95rem;
-    background: rgba(0, 30, 29, 0.5);
-    color: var(--card-head, #fffffe);
-    transition: border-color 0.2s;
+    font-family: var(--font, 'Montserrat', sans-serif);
+    background: #f8fafc;
+    color: var(--headline, #1a2e5a);
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .form-group input::placeholder {
-    color: rgba(171, 209, 198, 0.45);
+    color: #94a3b8;
 }
 
 .form-group input:focus,
 .form-group select:focus {
     outline: none;
-    border-color: var(--highlight, #f9bc60);
+    border-color: var(--sky, #42a5f5);
+    box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.15);
+    background: #ffffff;
 }
 
 .form-group select option {
-    background: #004643;
-    color: #fffffe;
+    background: #ffffff;
+    color: var(--headline, #1a2e5a);
 }
 
 .form-row {
@@ -93,27 +102,30 @@ body.auth-bg {
     flex: 1;
 }
 
-.btn-primary {
+body.auth-bg .btn-primary {
     width: 100%;
     padding: 14px;
     border: none;
-    border-radius: 8px;
-    background: var(--button, #f9bc60);
-    color: var(--btn-text, #001e1d);
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--royal, #1565c0), var(--blue, #1e88e5));
+    color: #ffffff;
     font-size: 1rem;
     font-weight: 700;
+    font-family: var(--font, 'Montserrat', sans-serif);
     cursor: pointer;
-    transition: background 0.2s, transform 0.1s;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 16px rgba(21, 101, 192, 0.3);
 }
 
-.btn-primary:hover {
-    background: #e5a94f;
+body.auth-bg .btn-primary:hover {
+    background: linear-gradient(135deg, #0d47a1, #1565c0);
     transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(21, 101, 192, 0.4);
 }
 
 .terms {
     font-size: 0.75rem;
-    color: rgba(171, 209, 198, 0.5);
+    color: #94a3b8;
     margin: 16px 0;
     line-height: 1.4;
 }
@@ -121,14 +133,14 @@ body.auth-bg {
 .footer-text {
     text-align: center;
     font-size: 0.88rem;
-    color: var(--card-para, #abd1c6);
+    color: var(--card-para, #64748b);
     margin-top: 20px;
 }
 
 .footer-text a {
-    color: var(--highlight, #f9bc60);
+    color: var(--royal, #1565c0);
     text-decoration: none;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .footer-text a:hover { text-decoration: underline; }

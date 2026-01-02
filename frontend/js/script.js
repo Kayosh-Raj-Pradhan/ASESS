@@ -15,6 +15,20 @@ document.addEventListener("DOMContentLoaded", function () {
                         link.classList.add("active");
                     }
                 });
+                // Mobile nav toggle
+                const navToggle = document.getElementById("navToggle");
+                const navLinks = document.getElementById("navLinks");
+                const navToggleIcon = document.getElementById("navToggleIcon");
+                if (navToggle && navLinks) {
+                    navToggle.addEventListener("click", () => {
+                        navLinks.classList.toggle("show-mobile");
+                        if (navToggleIcon) {
+                            navToggleIcon.className = navLinks.classList.contains("show-mobile")
+                                ? "ri-close-line"
+                                : "ri-menu-line";
+                        }
+                    });
+                }
             })
             .catch((err) => console.error("Failed to load nav:", err));
     }

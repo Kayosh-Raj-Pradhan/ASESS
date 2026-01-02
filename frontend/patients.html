@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASESS | Patient Profiles</title>
+    <meta name="description" content="Manage patient profiles, view scan history and appointments.">
+    <link rel="icon" href="/static/assets/images/logo.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/pages.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body class="bg-history">
+    <div id="main-wrapper">
+        <div id="header-placeholder"></div>
+
+        <div class="container page-container">
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:24px;">
+                    <div>
+                        <h2 style="margin:0;"><i class="ri-user-heart-line" style="margin-right:8px;"></i>Patient Profiles</h2>
+                        <p style="color:var(--card-para); margin-top:4px;">View patient scan history and manage profiles</p>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <input type="text" id="patientSearchInput" class="search-input" placeholder="🔍 Search patients..." oninput="filterPatients()">
+                        <button class="btn btn-primary" style="padding:10px 20px; font-size:0.9rem;" onclick="loadPatients()"><i class="ri-refresh-line"></i> Refresh</button>
+                    </div>
+                </div>
+
+                <div id="patientsContent">
+                    <div style="text-align:center; padding:32px;">
+                        <i class="ri-loader-4-line ri-spin" style="font-size:2rem; color:#42a5f5;"></i>
+                        <p style="margin-top:12px; color:var(--card-para);">Loading patient profiles...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="footer-placeholder"></div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/toast.js"></script>
+    <script src="/static/js/script.js"></script>
+    <script>
+        async function loadPatients() {
+            const container = document.getElementById('patientsContent');
+            try {
+                const response = await fetch('/ai/scans');
+                if (!response.ok) throw new Error('Failed to fetch');
+                const scans = await response.json();
+
+                if (scans.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:40px 20px;">
+                            <i class="ri-user-add-line" style="font-size:3rem; color:#42a5f5;"></i>
+                            <p style="color:var(--card-para); font-size:1rem; margin-top:16px;">No patient records yet.</p>
+                            <a href="/static/capture.html" class="btn btn-primary" style="margin-top:16px; display:inline-block;">Start First Scan</a>
+                        </div>`;
+                    return;
+                }
+
+                // Group scans by patient_name
+                const patients = {};
+                scans.forEach(s => {
+                    const name = s.patient_name;
+                    if (!patients[name]) {
+                        patients[name] = {
+                            name: name,
+                            patient_id: s.patient_id,
+                            scans: [],
+                            latestDate: s.scan_date,
+                            conditions: new Set()
+                        };
+                    }
+                    patients[name].scans.push(s);
+                    patients[name].conditions.add(s.prediction);
+                    if (s.scan_date > patients[name].latestDate) {
+                        patients[name].latestDate = s.scan_date;
+                    }
+                });
+
+                const patientList = Object.values(patients);
+
+                let html = '<div class="patient-grid" id="patientGrid">';
+                patientList.forEach(p => {
+                    const lastDate = p.latestDate ? new Date(p.latestDate).toLocaleDateString() : '—';
+                    const conditionsArr = Array.from(p.conditions);
+                    const hasAbnormal = conditionsArr.some(c => c !== 'Normal');
+                    const statusColor = hasAbnormal ? '#ef4444' : '#16a34a';
+                    const statusText = hasAbnormal ? 'Needs Attention' : 'Healthy';
+
+                    html += `
+                        <div class="patient-card" data-name="${p.name.toLowerCase()}">
+                            <div style="display:flex; align-items:center; gap:14px; margin-bottom:16px;">
+                                <div style="width:50px; height:50px; border-radius:50%; background:linear-gradient(135deg,#1565c0,#42a5f5); display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.3rem; font-weight:700;">
+                                    ${p.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h4 style="margin:0; color:var(--headline,#1a2e5a);">${p.name}</h4>
+                                    <span style="font-size:0.82rem; color:var(--card-para);">${p.patient_id || '—'}</span>
+                                </div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                <span style="font-size:0.85rem; color:var(--card-para);">Total Scans</span>
+                                <strong style="color:var(--headline);">${p.scans.length}</strong>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                <span style="font-size:0.85rem; color:var(--card-para);">Last Visit</span>
+                                <span style="font-size:0.85rem;">${lastDate}</span>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                                <span style="font-size:0.85rem; color:var(--card-para);">Status</span>
+                                <span style="font-size:0.82rem; font-weight:600; color:${statusColor}; background:${statusColor}15; padding:3px 10px; border-radius:20px;">${statusText}</span>
+                            </div>
+                            <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:14px;">
+                                ${conditionsArr.map(c => `<span style="font-size:0.75rem; padding:2px 8px; border-radius:12px; background:#e0f2fe; color:#1565c0; font-weight:500;">${c}</span>`).join('')}
+                            </div>
+                            <a href="/static/history.html" class="btn btn-primary" style="width:100%; text-align:center; padding:8px; font-size:0.85rem;">View Records</a>
+                        </div>`;
+                });
+                html += '</div>';
+
+                container.innerHTML = html;
+
+            } catch(err) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:32px;">
+                        <p style="color:#ef4444;">⚠️ Could not load patient profiles.</p>
+                        <p style="color:var(--card-para); font-size:0.85rem; margin-top:8px;">${err.message}</p>
+                    </div>`;
+            }
+        }
+
+        loadPatients();
+
+        function filterPatients() {
+            const query = document.getElementById('patientSearchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.patient-card');
+            cards.forEach(card => {
+                card.style.display = card.dataset.name.includes(query) ? '' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>

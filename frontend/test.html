@@ -4,26 +4,121 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASESS | General Eye Test</title>
+    <meta name="description" content="Interactive eye tests including color vision, visual acuity, and contrast sensitivity screening.">
+    <link rel="icon" href="/static/assets/images/logo.png" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
     <link rel="stylesheet" href="/static/css/style.css">
     <link rel="stylesheet" href="/static/css/pages.css">
     <link rel="stylesheet" href="/static/css/components.css">
     <link rel="stylesheet" href="/static/css/dashboard.css">
+    <style>
+        /* Ishihara Number Pad */
+        .ish-container {
+            background: #000000;
+            padding: 30px;
+            border-radius: 12px;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .ish-progress-bar {
+            height: 8px;
+            background: #ffffff;
+            width: 100%;
+            margin-bottom: 40px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .ish-progress-fill {
+            height: 100%;
+            background: #50b887;
+            transition: width 0.4s ease;
+        }
+        .ish-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            align-items: center;
+        }
+        .ish-plate-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .ish-plate-wrap img {
+            width: 100%;
+            max-width: 340px;
+            border-radius: 50%;
+            box-shadow: 0 0 16px rgba(0,0,0,0.8);
+        }
+        .ish-numpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        .ish-num-btn {
+            padding: 20px 10px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            border: none;
+            border-radius: 4px;
+            background: #437e7e;
+            color: #ffffff;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-align: center;
+            font-family: inherit;
+        }
+        .ish-num-btn:hover {
+            background: #366565;
+        }
+        .ish-num-btn:active {
+            background: #284a4a;
+        }
+        .ish-num-btn.skip-btn, .ish-num-btn.end-btn {
+            font-size: 1.1rem;
+        }
+        .ish-num-btn.selected-correct {
+            background: #50b887 !important;
+            color: #ffffff !important;
+            border-color: #50b887 !important;
+        }
+        .ish-num-btn.selected-wrong {
+            background: #ef4444 !important;
+            color: #ffffff !important;
+            border-color: #ef4444 !important;
+        }
+        .ish-note {
+            text-align: center;
+            color: #ffffff;
+            font-size: 0.95rem;
+            margin-top: 32px;
+            font-weight: 400;
+        }
+        @media (max-width: 768px) {
+            .ish-container { padding: 20px; }
+            .ish-layout { grid-template-columns: 1fr; }
+            .ish-plate-wrap img { max-width: 240px; }
+            .ish-num-btn { padding: 16px 10px; font-size: 1.1rem; }
+        }
+    </style>
 </head>
 <body class="bg-eyetest">
     <div id="main-wrapper">
         <div id="header-placeholder"></div>
 
         <div class="container page-container">
-            <h2 style="text-align:center; margin-bottom:8px;">General Eye Screening</h2>
-            <p style="text-align:center; margin-bottom:28px; color:var(--subhead);">Interactive vision tests with instant report generation</p>
+            <h2 style="text-align:center; margin-bottom:8px; color: #ffffff;">General Eye Screening</h2>
+            <p style="text-align:center; margin-bottom:28px; color: rgba(255,255,255,0.85);">Interactive vision tests with instant report generation</p>
 
             <!-- Patient Name -->
             <div class="card" id="patientCard">
                 <h3>Patient Information</h3>
                 <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-end;">
                     <div style="flex:1; min-width:200px;">
-                        <label style="display:block; margin-bottom:6px; color:var(--card-para); font-weight:600; font-size:0.85rem;">Patient Name</label>
-                        <input type="text" id="patientName" placeholder="Enter patient name" style="width:100%; padding:10px 12px; border:1px solid rgba(171,209,198,0.25); border-radius:8px; background:rgba(0,30,29,0.4); color:var(--card-head); font-size:0.95rem;">
+                        <label style="display:block; margin-bottom:6px; color:var(--subhead); font-weight:600; font-size:0.85rem;">Patient Name</label>
+                        <input type="text" id="patientName" placeholder="Enter patient name" style="width:100%; padding:10px 14px; border:1.5px solid var(--card-border); border-radius:10px; background:#f8fafc; color:var(--headline); font-size:0.95rem; font-family:var(--font);">
                     </div>
                     <button class="btn btn-primary" id="startTestsBtn" style="padding:10px 28px;">Start Tests</button>
                 </div>
@@ -34,47 +129,69 @@
                 <!-- Progress -->
                 <div class="card" style="padding:16px 28px;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span style="color:var(--card-head); font-weight:600;" id="testTitle">Test 1 of 3</span>
+                        <span style="color:var(--headline); font-weight:600;" id="testTitle">Test 1 of 3</span>
                         <div class="test-progress" id="progressDots"></div>
                     </div>
                 </div>
 
                 <!-- Test 1: Ishihara Color Blind -->
-                <div class="card test-panel" id="test-ishihara">
-                    <h3>Ishihara Color Blindness Test</h3>
-                    <p style="margin-bottom:16px;">What number do you see in the image below?</p>
-                    <div class="test-layout">
-                        <div>
-                            <div class="test-image-wrap" id="ishiharaPlate" style="background:#f5f0e8; border-radius:50%; width:260px; height:260px; overflow:hidden; margin:0 auto 16px;">
-                                <img id="ishiharaImg" style="width:100%; height:100%; object-fit:cover; border-radius:50%;" alt="Ishihara Plate">
-                            </div>
-                            <p style="text-align:center; color:var(--card-para); font-size:0.85rem; margin-bottom:12px;">Plate <strong id="plateCounter">1</strong> of 6</p>
-                            <div class="test-options" id="ishiharaOpts" style="justify-content:center;"></div>
+                <div class="test-panel" id="test-ishihara">
+                    <div class="ish-container">
+                        <div class="ish-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <h3 style="margin:0; font-size:1.4rem;">ishiharatest</h3>
+                            <span style="font-size:0.9rem; color:#aaaaaa;">Plate <strong id="plateCounter" style="color:#ffffff;">1</strong> / <span id="totalPlates">14</span></span>
                         </div>
-                        <div class="card" style="background:rgba(0,30,29,0.3); border:none; box-shadow:none;">
-                            <h3 style="font-size:0.95rem;">Results</h3>
-                            <div id="ishiharaResults" style="color:var(--card-para); font-size:0.9rem;">Answer all plates to see results.</div>
+                        <div class="ish-progress-bar"><div class="ish-progress-fill" id="ishProgressFill" style="width:0%"></div></div>
+
+                        <div class="ish-layout">
+                            <div class="ish-plate-wrap">
+                                <img id="ishiharaImg" alt="Ishihara Plate" src="">
+                            </div>
+                            <div>
+                                <div class="ish-numpad" id="ishNumpad">
+                                    <button class="ish-num-btn" onclick="ishiharaPick('1')">1</button>
+                                    <button class="ish-num-btn" onclick="ishiharaPick('2')">2</button>
+                                    <button class="ish-num-btn" onclick="ishiharaPick('3')">3</button>
+                                    <button class="ish-num-btn" onclick="ishiharaPick('4')">4</button>
+                                    <button class="ish-num-btn" onclick="ishiharaPick('5')">5</button>
+                                    <button class="ish-num-btn" onclick="ishiharaPick('6')">6</button>
+                                    <button class="ish-num-btn" onclick="ishiharaPick('7')">7</button>
+                                    <button class="ish-num-btn" onclick="ishiharaPick('8')">8</button>
+                                    <button class="ish-num-btn" onclick="ishiharaPick('9')">9</button>
+                                    <button class="ish-num-btn skip-btn" onclick="ishiharaPick('skip')">SKIP</button>
+                                    <button class="ish-num-btn" onclick="ishiharaPick('0')">0</button>
+                                    <button class="ish-num-btn end-btn" onclick="ishiharaEnd()">END</button>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="ish-note"><strong>Note:</strong> Please select the correct option you see in the image. Please try to choose within 3 sec.</p>
+                        
+                        <!-- Results panel (hidden until done) -->
+                        <div id="ishiharaResultsPanel" style="display:none; margin-top:30px; padding:20px; background:#112222; border-radius:10px; border:1px solid #437e7e;">
+                            <h3 style="font-size:1.1rem; margin-bottom:12px; color:#50b887;">Results</h3>
+                            <div id="ishiharaResults" style="color:#ffffff; font-size:0.95rem;"></div>
                         </div>
                     </div>
-                    <div style="text-align:right; margin-top:16px;">
+
+                    <div style="text-align:right;">
                         <button class="btn btn-primary" id="ishiharaNext">Next Test →</button>
                     </div>
                 </div>
 
                 <!-- Test 2: Snellen Visual Acuity -->
                 <div class="card test-panel" id="test-snellen" style="display:none;">
-                    <h3>👁️ Visual Acuity Test (Snellen)</h3>
-                    <p style="margin-bottom:16px;">Read the letters displayed below. Sit ~40cm from screen.</p>
+                    <h3>Visual Acuity Test (Snellen)</h3>
+                    <p style="margin-bottom:16px; color:var(--card-para);">Read the letters displayed below. Sit ~40cm from screen.</p>
                     <div class="test-layout">
                         <div>
                             <div class="snellen-letter" id="snellenDisplay">E</div>
                             <div style="margin-bottom:12px;">
-                                <label style="color:var(--card-para); font-weight:600; font-size:0.85rem;">Type what you see:</label>
-                                <input type="text" id="snellenInput" maxlength="10" style="width:100%; padding:10px; margin-top:6px; border:1px solid rgba(171,209,198,0.25); border-radius:8px; background:rgba(0,30,29,0.4); color:var(--card-head); font-size:1.1rem; text-transform:uppercase; letter-spacing:0.2em;">
+                                <label style="color:var(--subhead); font-weight:600; font-size:0.85rem;">Type what you see:</label>
+                                <input type="text" id="snellenInput" maxlength="10" style="width:100%; padding:10px 14px; margin-top:6px; border:1.5px solid var(--card-border); border-radius:10px; background:#f8fafc; color:var(--headline); font-size:1.1rem; text-transform:uppercase; letter-spacing:0.2em; font-family:var(--font);">
                             </div>
                             <button class="btn btn-primary" id="snellenSubmit" style="width:100%;">Submit Answer</button>
                         </div>
-                        <div class="card" style="background:rgba(0,30,29,0.3); border:none; box-shadow:none;">
+                        <div class="card" style="background:var(--bg-alt); border:1px solid var(--card-border); box-shadow:none;">
                             <h3 style="font-size:0.95rem;">Results</h3>
                             <div id="snellenResults" style="color:var(--card-para); font-size:0.9rem;">Complete all rows to see results.</div>
                         </div>
@@ -86,8 +203,8 @@
 
                 <!-- Test 3: Contrast Sensitivity -->
                 <div class="card test-panel" id="test-contrast" style="display:none;">
-                    <h3>🌗 Contrast Sensitivity Test</h3>
-                    <p style="margin-bottom:16px;">Can you see the letter in the box below? Answer Yes or No for each level.</p>
+                    <h3>Contrast Sensitivity Test</h3>
+                    <p style="margin-bottom:16px; color:var(--card-para);">Can you see the letter in the box below? Answer Yes or No for each level.</p>
                     <div class="test-layout">
                         <div>
                             <div class="contrast-box" id="contrastDisplay" style="background:#111; color:rgba(255,255,255,0.5);">C</div>
@@ -97,7 +214,7 @@
                             </div>
                             <p style="color:var(--card-para); font-size:0.85rem; margin-top:8px;">Level: <strong id="contrastLevel">1</strong> / 8</p>
                         </div>
-                        <div class="card" style="background:rgba(0,30,29,0.3); border:none; box-shadow:none;">
+                        <div class="card" style="background:var(--bg-alt); border:1px solid var(--card-border); box-shadow:none;">
                             <h3 style="font-size:0.95rem;">Results</h3>
                             <div id="contrastResults" style="color:var(--card-para); font-size:0.9rem;">Complete all levels to see results.</div>
                         </div>
@@ -122,19 +239,19 @@
 
                 <div class="card">
                     <h3>1. Color Vision (Ishihara)</h3>
-                    <div id="rptIshihara" style="color:var(--card-para);"></div>
+                    <div id="rptIshihara" style="color:var(--paragraph);"></div>
                 </div>
                 <div class="card">
                     <h3>2. Visual Acuity (Snellen)</h3>
-                    <div id="rptSnellen" style="color:var(--card-para);"></div>
+                    <div id="rptSnellen" style="color:var(--paragraph);"></div>
                 </div>
                 <div class="card">
                     <h3>3. Contrast Sensitivity</h3>
-                    <div id="rptContrast" style="color:var(--card-para);"></div>
+                    <div id="rptContrast" style="color:var(--paragraph);"></div>
                 </div>
                 <div class="card">
                     <h3>Overall Assessment</h3>
-                    <div id="rptOverall" style="color:var(--card-para);"></div>
+                    <div id="rptOverall" style="color:var(--paragraph);"></div>
                 </div>
                 <div class="card">
                     <h3>Doctor's Notes</h3>
@@ -205,68 +322,194 @@
         updateTitle();
     }
 
-    // ===== Ishihara (Real Plate Images) =====
+    // ===== Ishihara (Diagnostic Plates with Number Pad) =====
     const ishiharaPlates = [
-        { number: '12', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Ishihara_1.svg/220px-Ishihara_1.svg.png' },
-        { number: '8',  img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Ishihara_2.svg/220px-Ishihara_2.svg.png' },
-        { number: '6',  img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Ishihara_3.svg/220px-Ishihara_3.svg.png' },
-        { number: '29', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Ishihara_4.svg/220px-Ishihara_4.svg.png' },
-        { number: '57', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Ishihara_5.svg/220px-Ishihara_5.svg.png' },
-        { number: '45', img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Ishihara_9.svg/220px-Ishihara_9.svg.png' },
+        { img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Ishihara_1.svg/400px-Ishihara_1.svg.png', normal: '12', type: 'demo' },
+        { img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Ishihara_2.svg/400px-Ishihara_2.svg.png', normal: '8',  type: 'vanishing', deficiency: 'red-green' },
+        { img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Ishihara_3.svg/400px-Ishihara_3.svg.png', normal: '6',  type: 'vanishing', deficiency: 'red-green' },
+        { img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Ishihara_4.svg/400px-Ishihara_4.svg.png', normal: '29', type: 'vanishing', deficiency: 'red-green' },
+        { img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Ishihara_5.svg/400px-Ishihara_5.svg.png', normal: '57', type: 'vanishing', deficiency: 'red-green' },
+        { img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Ishihara_6.svg/400px-Ishihara_6.svg.png', normal: '5',  type: 'vanishing', deficiency: 'red-green' },
+        { img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Ishihara_7.svg/400px-Ishihara_7.svg.png', normal: '3',  type: 'vanishing', deficiency: 'red-green' },
+        { img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Ishihara_8.svg/400px-Ishihara_8.svg.png', normal: '15', type: 'vanishing', deficiency: 'red-green' },
+        { img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Ishihara_9.svg/400px-Ishihara_9.svg.png', normal: '74', type: 'vanishing', deficiency: 'red-green' },
+        { img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Ishihara_11.svg/400px-Ishihara_11.svg.png', normal: '6', type: 'vanishing', deficiency: 'red-green' },
+        { img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Ishihara_10.svg/400px-Ishihara_10.svg.png', normal: '2', type: 'vanishing', deficiency: 'red-green'},
+        { img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Ishihara_23.svg/400px-Ishihara_23.svg.png', normal: '42', protan: '2', deutan: '4', type: 'transformation' },
+        { img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Ishihara_5.svg/400px-Ishihara_5.svg.png', normal: '57', protan: '35', deutan: '35', type: 'diagnostic' },
+        { img: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Ishihara_4.svg/400px-Ishihara_4.svg.png', normal: '29', protan: '70', deutan: '70', type: 'diagnostic' },
     ];
+
     let ishPlateIdx = 0;
     let ishCorrect = 0;
+    let ishAnswers = [];
+    let ishDone = false;
+    let ishInputBuffer = '';
+    let ishInputTimeout = null;
 
     function initIshihara() {
-        ishPlateIdx = 0; ishCorrect = 0;
+        ishPlateIdx = 0;
+        ishCorrect = 0;
+        ishAnswers = [];
+        ishDone = false;
+        ishInputBuffer = '';
+        document.getElementById('totalPlates').textContent = ishiharaPlates.length;
         showIshiharaPlate();
-        renderIshiharaOpts();
     }
+
     function showIshiharaPlate() {
+        if (ishPlateIdx >= ishiharaPlates.length) {
+            finishIshihara();
+            return;
+        }
         const plate = ishiharaPlates[ishPlateIdx];
         document.getElementById('ishiharaImg').src = plate.img;
         document.getElementById('plateCounter').textContent = ishPlateIdx + 1;
-    }
-    function renderIshiharaOpts() {
-        const plate = ishiharaPlates[ishPlateIdx];
-        const opts = [plate.number];
-        while (opts.length < 4) {
-            const n = String(Math.floor(Math.random() * 80) + 1);
-            if (!opts.includes(n)) opts.push(n);
-        }
-        opts.sort(() => Math.random() - 0.5);
-        const container = document.getElementById('ishiharaOpts');
-        container.innerHTML = '';
-        opts.forEach(o => {
-            const btn = document.createElement('button');
-            btn.className = 'test-opt-btn';
-            btn.textContent = o;
-            btn.onclick = () => ishiharaSelect(o, plate.number, btn);
-            container.appendChild(btn);
+        const pct = (ishPlateIdx / ishiharaPlates.length) * 100;
+        document.getElementById('ishProgressFill').style.width = pct + '%';
+        ishInputBuffer = '';
+        document.querySelectorAll('.ish-num-btn').forEach(b => {
+            b.disabled = false;
+            b.classList.remove('selected-correct', 'selected-wrong');
         });
     }
-    function ishiharaSelect(chosen, correct, btn) {
-        document.querySelectorAll('#ishiharaOpts .test-opt-btn').forEach(b => b.disabled = true);
-        if (chosen === correct) {
-            btn.classList.add('correct'); ishCorrect++;
-        } else {
-            btn.classList.add('wrong');
-            document.querySelectorAll('#ishiharaOpts .test-opt-btn').forEach(b => { if(b.textContent===correct) b.classList.add('correct'); });
+
+    function ishiharaPick(val) {
+        if (ishDone) return;
+
+        if (val === 'skip') {
+            ishAnswers.push({
+                plateIdx: ishPlateIdx,
+                given: 'skip',
+                correct: ishiharaPlates[ishPlateIdx].normal,
+                isCorrect: false,
+                type: ishiharaPlates[ishPlateIdx].type
+            });
+            ishPlateIdx++;
+            showIshiharaPlate();
+            return;
         }
+
+        ishInputBuffer += val;
+
+        const plate = ishiharaPlates[ishPlateIdx];
+        const expected = plate.normal;
+
+        if (expected.length === 1 || ishInputBuffer.length >= 2) {
+            submitIshiharaAnswer();
+        } else {
+            clearTimeout(ishInputTimeout);
+            ishInputTimeout = setTimeout(() => {
+                submitIshiharaAnswer();
+            }, 1500);
+        }
+    }
+
+    function submitIshiharaAnswer() {
+        clearTimeout(ishInputTimeout);
+        const plate = ishiharaPlates[ishPlateIdx];
+        const given = ishInputBuffer;
+        const expected = plate.normal;
+        const isCorrect = given === expected;
+
+        if (isCorrect) ishCorrect++;
+
+        ishAnswers.push({
+            plateIdx: ishPlateIdx,
+            given: given,
+            correct: expected,
+            isCorrect: isCorrect,
+            type: plate.type,
+            protan: plate.protan,
+            deutan: plate.deutan
+        });
+
+        document.querySelectorAll('.ish-num-btn').forEach(b => b.disabled = true);
+
         setTimeout(() => {
             ishPlateIdx++;
-            if (ishPlateIdx < ishiharaPlates.length) {
-                showIshiharaPlate(); renderIshiharaOpts();
-            } else {
-                const pct = Math.round((ishCorrect / ishiharaPlates.length) * 100);
-                const status = pct >= 80 ? '<span class="text-success">Normal Color Vision</span>' : '<span class="text-danger">Possible Color Deficiency</span>';
-                results.ishihara = { correct: ishCorrect, total: ishiharaPlates.length, pct, status: pct >= 80 ? 'Normal' : 'Deficient' };
-                document.getElementById('ishiharaResults').innerHTML = `Score: ${ishCorrect}/${ishiharaPlates.length} (${pct}%) — ${status}`;
-                document.getElementById('ishiharaImg').style.display = 'none';
-                document.getElementById('ishiharaPlate').innerHTML = '<p style="color:#4ade80; font-weight:700; font-size:1.2rem;">✓ Complete</p>';
-            }
-        }, 1000);
+            showIshiharaPlate();
+        }, 600);
     }
+
+    function ishiharaEnd() {
+        if (ishAnswers.length === 0) {
+            showToast('Please answer at least one plate before ending', 'warning');
+            return;
+        }
+        finishIshihara();
+    }
+
+    function finishIshihara() {
+        ishDone = true;
+        const total = ishAnswers.length;
+        const correct = ishAnswers.filter(a => a.isCorrect).length;
+        const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+        document.getElementById('ishProgressFill').style.width = '100%';
+
+        let cbType = 'Normal Color Vision';
+        let cbSeverity = 'None';
+
+        if (pct < 80) {
+            const missed = ishAnswers.filter(a => !a.isCorrect);
+            const transMissed = missed.filter(a => a.type === 'transformation');
+
+            let protanSignals = 0;
+            let deutanSignals = 0;
+
+            transMissed.forEach(a => {
+                const plate = ishiharaPlates[a.plateIdx];
+                if (plate.protan && a.given === plate.protan) protanSignals++;
+                if (plate.deutan && a.given === plate.deutan) deutanSignals++;
+            });
+
+            ishAnswers.forEach(a => {
+                const plate = ishiharaPlates[a.plateIdx];
+                if (plate.type === 'diagnostic' && !a.isCorrect) {
+                    if (plate.protan && a.given === plate.protan) protanSignals++;
+                    if (plate.deutan && a.given === plate.deutan) deutanSignals++;
+                }
+            });
+
+            if (protanSignals > deutanSignals) {
+                cbType = 'Protanopia (Red Deficiency)';
+            } else if (deutanSignals > protanSignals) {
+                cbType = 'Deuteranopia (Green Deficiency)';
+            } else {
+                cbType = 'Red-Green Color Vision Deficiency';
+            }
+
+            const missRate = ((total - correct) / total) * 100;
+            if (missRate > 60) cbSeverity = 'Strong';
+            else if (missRate > 30) cbSeverity = 'Moderate';
+            else cbSeverity = 'Mild';
+        }
+
+        results.ishihara = {
+            correct, total, pct,
+            status: pct >= 80 ? 'Normal' : 'Deficient',
+            colorBlindType: cbType,
+            severity: cbSeverity,
+            answers: ishAnswers.map(a => ({ given: a.given, correct: a.correct, isCorrect: a.isCorrect }))
+        };
+
+        const panel = document.getElementById('ishiharaResultsPanel');
+        panel.style.display = 'block';
+
+        const statusClass = pct >= 80 ? 'text-success' : 'text-danger';
+        let html = `<p>Plates Answered: <strong>${total}</strong> | Correct: <strong>${correct}</strong> (${pct}%)</p>`;
+        html += `<p>Status: <strong class="${statusClass}">${results.ishihara.status}</strong></p>`;
+        if (pct < 80) {
+            html += `<p style="margin-top:8px;">Type: <strong class="text-danger">${cbType}</strong></p>`;
+            html += `<p>Severity: <strong class="text-warning">${cbSeverity}</strong></p>`;
+        }
+        document.getElementById('ishiharaResults').innerHTML = html;
+
+        document.querySelector('.ish-layout').style.display = 'none';
+        document.querySelector('.ish-note').style.display = 'none';
+    }
+
     document.getElementById('ishiharaNext').onclick = () => goToTest(1);
 
     // ===== Snellen =====
@@ -339,7 +582,7 @@
             results.contrast = { levelsDetected: contrastLastSeen, total: contrastLevels.length, pct, status };
             document.getElementById('contrastResults').innerHTML = `Detected ${contrastLastSeen}/${contrastLevels.length} levels (${pct}%) — <span class="${contrastLastSeen >= 5 ? 'text-success' : 'text-warning'}">${status}</span>`;
             document.getElementById('contrastDisplay').textContent = '✓';
-            document.getElementById('contrastDisplay').style.color = '#4ade80';
+            document.getElementById('contrastDisplay').style.color = '#16a34a';
         }
     }
 
@@ -356,11 +599,22 @@
         document.getElementById('rptDate').textContent = new Date().toLocaleDateString();
         document.getElementById('rptDoctor').textContent = userName || 'Unknown';
 
-        // Ishihara
+        // Ishihara — with color blindness type
         const ish = results.ishihara;
-        document.getElementById('rptIshihara').innerHTML = ish.correct !== undefined
-            ? `<p>Plates Correct: <strong>${ish.correct}/${ish.total}</strong> (${ish.pct}%)</p><p>Status: <strong class="${ish.status==='Normal'?'text-success':'text-danger'}">${ish.status}</strong></p>`
-            : '<p class="text-warning">Test not completed</p>';
+        if (ish.correct !== undefined) {
+            let ishHtml = `<p>Plates Correct: <strong>${ish.correct}/${ish.total}</strong> (${ish.pct}%)</p>`;
+            ishHtml += `<p>Status: <strong class="${ish.status==='Normal'?'text-success':'text-danger'}">${ish.status}</strong></p>`;
+            if (ish.status !== 'Normal') {
+                ishHtml += `<div style="margin-top:12px; padding:16px; background:rgba(239,68,68,0.08); border-radius:8px; border-left:4px solid #ef4444;">`;
+                ishHtml += `<h4 style="margin-bottom:8px; color:#ef4444;">⚠️ Color Blindness Detected</h4>`;
+                ishHtml += `<strong>Type:</strong> <span style="font-size:1.1rem; color:#ef4444; font-weight:700;">${ish.colorBlindType}</span><br>`;
+                ishHtml += `<strong>Severity:</strong> ${ish.severity}`;
+                ishHtml += `</div>`;
+            }
+            document.getElementById('rptIshihara').innerHTML = ishHtml;
+        } else {
+            document.getElementById('rptIshihara').innerHTML = '<p class="text-warning">Test not completed</p>';
+        }
 
         // Snellen
         const sn = results.snellen;
@@ -376,12 +630,12 @@
 
         // Overall
         const issues = [];
-        if (ish.status === 'Deficient') issues.push('Color vision deficiency detected');
+        if (ish.status === 'Deficient') issues.push('Color vision deficiency: ' + ish.colorBlindType + ' (' + ish.severity + ')');
         if (sn.status === 'Below Normal') issues.push('Reduced visual acuity (' + sn.acuity + ')');
-        if (ct.status !== 'Normal') issues.push('Contrast sensitivity: ' + ct.status);
+        if (ct.status !== 'Normal' && ct.status) issues.push('Contrast sensitivity: ' + ct.status);
         document.getElementById('rptOverall').innerHTML = issues.length === 0
             ? '<p class="text-success" style="font-weight:700;">All tests within normal range. No immediate concerns detected.</p>'
-            : '<ul style="padding-left:20px;">' + issues.map(i => '<li class="text-warning" style="margin-bottom:6px;">' + i + '</li>').join('') + '</ul><p style="margin-top:12px;">Recommend follow-up with an ophthalmologist for further evaluation.</p>';
+            : '<ul style="padding-left:20px; list-style:disc;">' + issues.map(i => '<li class="text-warning" style="margin-bottom:6px;">' + i + '</li>').join('') + '</ul><p style="margin-top:12px;">Recommend follow-up with an ophthalmologist for further evaluation.</p>';
 
         // Doctor notes access
         if (userRole === 'doctor' || userRole === 'admin') {
@@ -393,7 +647,6 @@
         }
 
         document.getElementById('saveNotesBtn').onclick = () => {
-            // Update saved entry with notes
             const history = JSON.parse(localStorage.getItem('eyeTestHistory') || '[]');
             const lastEntry = history[history.length - 1];
             if (lastEntry) {

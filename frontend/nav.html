@@ -2,11 +2,12 @@
     <div class="nav-container">
         <a href="/static/index.html" class="logo-area">
             <img src="/static/assets/images/logo.png" alt="ASESS Logo" class="main-logo">
-            <div class="logo-text">
-                <span class="brand">ASESS</span>
-            </div>
+            <span class="logo-text">ASESS</span>
         </a>
-        <div class="nav-links">
+        <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation">
+            <i class="ri-menu-line" id="navToggleIcon"></i>
+        </button>
+        <div class="nav-links" id="navLinks">
             <a href="/static/index.html">Home</a>
             <a href="/static/capture.html">New Scan</a>
             <a href="/static/test.html">Eye Test</a>
