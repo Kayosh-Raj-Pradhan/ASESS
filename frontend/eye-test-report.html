@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASESS | Eye Test Report</title>
     <meta name="description" content="View detailed eye test report with color vision, visual acuity, and contrast sensitivity results.">
-    <link rel="icon" href="/static/assets/images/logo.png" type="image/png">
+    <link rel="icon" href="/assets/images/logo.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="/static/css/pages.css">
-    <link rel="stylesheet" href="/static/css/components.css">
-    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/pages.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
 </head>
 <body class="bg-report">
     <div id="main-wrapper">
@@ -25,9 +25,9 @@
         <div id="footer-placeholder"></div>
     </div>
 
-    <script src="/static/js/api.js"></script>
-    <script src="/static/js/toast.js"></script>
-    <script src="/static/js/script.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/toast.js"></script>
+    <script src="/js/script.js"></script>
     <script>
         function loadReport() {
             const params = new URLSearchParams(window.location.search);
@@ -42,7 +42,7 @@
                         <p style="font-size:2rem; margin-bottom:12px;">⚠️</p>
                         <h3 style="margin-bottom:12px;">Report Not Found</h3>
                         <p style="color:var(--card-para); margin-bottom:20px;">This eye test report could not be found.</p>
-                        <a href="/static/history.html" class="btn btn-primary" style="padding:10px 28px;">← Back to History</a>
+                        <a href="/history/" class="btn btn-primary" style="padding:10px 28px;">← Back to History</a>
                     </div>`;
                 return;
             }
@@ -85,7 +85,7 @@
                         <h2 style="margin:0;">📋 Eye Test Report</h2>
                         <div style="display:flex; gap:10px;">
                             <button class="btn btn-primary" onclick="window.print()" style="padding:8px 20px; font-size:0.9rem;">🖨️ Print Report</button>
-                            <a href="/static/history.html" class="btn btn-outline" style="padding:8px 20px; font-size:0.9rem;">← Back to History</a>
+                            <a href="/history/" class="btn btn-outline" style="padding:8px 20px; font-size:0.9rem;">← Back to History</a>
                         </div>
                     </div>
                     <div class="detail-row"><span class="detail-label">Patient Name</span><span class="detail-value">${entry.patientName}</span></div>
@@ -149,7 +149,7 @@
             let history = JSON.parse(localStorage.getItem('eyeTestHistory') || '[]');
             history = history.filter(e => e.id !== id);
             localStorage.setItem('eyeTestHistory', JSON.stringify(history));
-            window.location.href = '/static/history.html';
+            window.location.href = '/history.html';
         }
 
         loadReport();

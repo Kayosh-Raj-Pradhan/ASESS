@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASESS | View Report</title>
     <meta name="description" content="View detailed eye screening report with AI-powered diagnosis.">
-    <link rel="icon" href="/static/assets/images/logo.png" type="image/png">
+    <link rel="icon" href="/assets/images/logo.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="/static/css/pages.css">
-    <link rel="stylesheet" href="/static/css/components.css">
-    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/pages.css">
+    <link rel="stylesheet" href="/css/components.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
 </head>
 <body class="bg-report">
     <div id="main-wrapper">
@@ -22,7 +22,7 @@
                     <h2 style="margin:0;">Screening Report</h2>
                     <div style="display:flex; gap:10px;">
                         <button class="btn btn-primary" onclick="window.print()" style="padding:8px 20px; font-size:0.9rem;">🖨️ Print</button>
-                        <a href="/static/history.html" class="btn btn-outline" style="padding:8px 20px; font-size:0.9rem;">← Back to History</a>
+                        <a href="/history" class="btn btn-outline" style="padding:8px 20px; font-size:0.9rem;">← Back to History</a>
                     </div>
                 </div>
             </div>
@@ -110,16 +110,16 @@
             <div id="reportError" class="card" style="display:none; text-align:center; padding:40px;">
                 <p style="font-size:2rem; margin-bottom:12px;">⚠️</p>
                 <p id="reportErrorMsg" style="color:#ef4444;">Failed to load report.</p>
-                <a href="/static/history.html" class="btn btn-primary" style="margin-top:16px; display:inline-block;">Back to History</a>
+                <a href="/history" class="btn btn-primary" style="margin-top:16px; display:inline-block;">Back to History</a>
             </div>
         </div>
 
         <div id="footer-placeholder"></div>
     </div>
 
-    <script src="/static/js/api.js"></script>
-    <script src="/static/js/toast.js"></script>
-    <script src="/static/js/script.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/toast.js"></script>
+    <script src="/js/script.js"></script>
     <script>
         // Condition-specific recommendations
         const RECOMMENDATIONS = {
@@ -184,14 +184,18 @@
 
                 const condEl = document.getElementById('rptCondition');
                 condEl.textContent = scan.prediction;
-                condEl.className = scan.prediction === 'Normal' ? 'detail-value text-success' : 'detail-value text-danger';
+                condEl.style.color = scan.prediction === 'Normal' ? '#0d9488' : '#1565c0';
+                condEl.style.fontWeight = '600';
 
                 document.getElementById('rptConfidence').textContent = scan.confidence + '%';
+                document.getElementById('rptConfidence').style.color = '#1565c0';
                 document.getElementById('rptConfBar').style.width = scan.confidence + '%';
+                document.getElementById('rptConfBar').style.background = 'linear-gradient(90deg, #1565c0, #0d9488)';
 
                 const statusEl = document.getElementById('rptStatus');
                 statusEl.textContent = scan.status;
-                statusEl.className = scan.status === 'Verified' ? 'detail-value text-success' : 'detail-value text-warning';
+                statusEl.style.color = scan.status === 'Verified' ? '#15803d' : '#0891b2';
+                statusEl.style.fontWeight = '600';
 
                 document.getElementById('rptDoctor').textContent = scan.screened_by || '—';
 
@@ -220,11 +224,10 @@
                 // Severity bars
                 const barsDiv = document.getElementById('rptSeverityBars');
                 if (scan.all_probabilities) {
+                    const SEVERITY_COLORS = ['#1565c0','#0d9488','#1e88e5','#14b8a6','#42a5f5','#2dd4bf'];
                     const sorted = Object.entries(scan.all_probabilities).sort((a,b) => b[1] - a[1]);
-                    sorted.forEach(([cls, pct]) => {
-                        const barColor = cls === 'Normal'
-                            ? 'background:#16a34a;'
-                            : (pct > 50 ? 'background:linear-gradient(90deg,#ef4444,#f87171);' : '');
+                    sorted.forEach(([cls, pct], i) => {
+                        const barColor = `background:${SEVERITY_COLORS[i % SEVERITY_COLORS.length]};`;
                         barsDiv.innerHTML += `
                             <div class="condition-row">
                                 <span class="condition-name">${cls}</span>
@@ -237,18 +240,26 @@
                 document.getElementById('reportLoading').style.display = 'none';
                 document.getElementById('reportContent').style.display = 'block';
 
-                // Role-based notes access
+                // Role-based notes access (4 roles)
                 const token = localStorage.getItem('access_token');
                 if (token) {
                     try {
                         const u = await apiRequest('/users/me', 'GET');
-                        if (u.role === 'doctor' || u.role === 'admin') {
+                        if (u.role === 'doctor') {
+                            // Doctor: full write + verify
                             document.getElementById('doctorNotes').disabled = false;
                             document.getElementById('saveNotesBtn').style.display = 'inline-block';
                             document.getElementById('verifyBtn').style.display = 'inline-block';
                             document.getElementById('notesAccessLabel').textContent = 'Add your clinical observations';
+                        } else if (u.role === 'superadmin' || u.role === 'admin') {
+                            // Admin/Superadmin: can view and verify but notes are optional
+                            document.getElementById('doctorNotes').disabled = false;
+                            document.getElementById('saveNotesBtn').style.display = 'inline-block';
+                            document.getElementById('verifyBtn').style.display = 'inline-block';
+                            document.getElementById('notesAccessLabel').textContent = 'Administrative review';
                         } else {
-                            document.getElementById('notesAccessLabel').textContent = 'Only doctors can add notes (read-only for staff)';
+                            // Staff: read-only, no notes, no verify
+                            document.getElementById('notesAccessLabel').textContent = 'Only doctors can add notes and verify (read-only for staff)';
                         }
                     } catch(e) {
                         document.getElementById('notesAccessLabel').textContent = 'Login required to add notes';
@@ -282,7 +293,7 @@
                         });
                         if (response.ok) {
                             statusEl.textContent = 'Verified';
-                            statusEl.className = 'detail-value text-success';
+                            statusEl.style.color = '#15803d';
                             showToast('Report marked as Verified', 'success');
                         }
                     } catch(e) {
