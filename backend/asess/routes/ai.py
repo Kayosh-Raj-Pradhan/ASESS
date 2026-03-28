@@ -5,10 +5,12 @@ from sqlalchemy import func
 from datetime import datetime, timedelta
 import json
 import base64
+import re
 
 from asess.core.database import SessionLocal
 from asess.services.ml_service import eye_disease_model
 from asess.models.scan import ScanResult
+from asess.models.patient import Patient
 from asess.schemas.scan import ScanRead, ScanUpdate
 
 router = APIRouter()
@@ -34,6 +36,22 @@ async def predict_eye_disease(
     if eye_disease_model is None:
         raise HTTPException(status_code=503, detail="AI model is currently unavailable")
 
+    # Validate patient_id format: 3 letters + 3 numbers (e.g. ABC123)
+    if patient_id:
+        if not re.match(r'^[A-Za-z]{3}[0-9]{3}$', patient_id):
+            raise HTTPException(
+                status_code=400,
+                detail="Patient ID must be 3 letters followed by 3 numbers (e.g. ABC123)"
+            )
+        # Check for duplicate patient_id with different name
+        existing = db.query(Patient).filter(Patient.patient_id == patient_id.upper()).first()
+        if existing and existing.patient_name.lower() != patient_name.lower():
+            raise HTTPException(
+                status_code=400,
+                detail=f"Patient ID {patient_id.upper()} is already assigned to '{existing.patient_name}'"
+            )
+        patient_id = patient_id.upper()  # Normalize to uppercase
+
     try:
         image_bytes = await file.read()
         result = eye_disease_model.predict(image_bytes)
@@ -44,7 +62,7 @@ async def predict_eye_disease(
         # Save to database
         scan = ScanResult(
             patient_name=patient_name,
-            patient_id=patient_id or f"P{int(datetime.utcnow().timestamp())}",
+            patient_id=patient_id or f"UNK{int(datetime.utcnow().timestamp()) % 1000:03d}",
             prediction=result["prediction"],
             confidence=result["confidence"],
             all_probabilities=json.dumps(result["all_probabilities"]),
@@ -57,6 +75,18 @@ async def predict_eye_disease(
         db.add(scan)
         db.commit()
         db.refresh(scan)
+
+        # Auto-create patient profile if not exists
+        pid = scan.patient_id
+        existing_patient = db.query(Patient).filter(Patient.patient_id == pid).first()
+        if not existing_patient:
+            new_patient = Patient(
+                patient_id=pid,
+                patient_name=patient_name,
+                created_by=screened_by or "System"
+            )
+            db.add(new_patient)
+            db.commit()
 
         return JSONResponse({
             "status": "success",
@@ -128,26 +158,51 @@ def update_scan(scan_id: int, update: ScanUpdate, db: Session = Depends(get_db))
     db.refresh(scan)
     return {"detail": "Scan updated successfully"}
 
+# ──────────────── Delete Scan ────────────────
+
+@router.delete("/scans/{scan_id}")
+def delete_scan(scan_id: int, db: Session = Depends(get_db)):
+    scan = db.query(ScanResult).filter(ScanResult.id == scan_id).first()
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    db.delete(scan)
+    db.commit()
+    return {"detail": "Scan deleted successfully"}
+
 # ──────────────── Analytics ────────────────
 
 @router.get("/analytics")
 def get_analytics(db: Session = Depends(get_db)):
     total_scans = db.query(func.count(ScanResult.id)).scalar() or 0
 
-    # Abnormal = anything that's not "Normal"
     abnormal_count = db.query(func.count(ScanResult.id)).filter(
         ScanResult.prediction != "Normal"
     ).scalar() or 0
     abnormal_pct = round((abnormal_count / total_scans * 100), 1) if total_scans > 0 else 0
 
-    # Condition distribution
+    normal_count = total_scans - abnormal_count
+    normal_pct = round((normal_count / total_scans * 100), 1) if total_scans > 0 else 0
+
+    verified_count = db.query(func.count(ScanResult.id)).filter(
+        ScanResult.status == "Verified"
+    ).scalar() or 0
+    pending_count = total_scans - verified_count
+
+    avg_conf = db.query(func.avg(ScanResult.confidence)).scalar()
+    avg_confidence = round(float(avg_conf), 1) if avg_conf else 0
+
     conditions = db.query(
-        ScanResult.prediction,
-        func.count(ScanResult.id)
+        ScanResult.prediction, func.count(ScanResult.id)
     ).group_by(ScanResult.prediction).all()
     condition_dist = {row[0]: row[1] for row in conditions}
 
-    # Daily scans for last 7 days
+    screeners = db.query(
+        ScanResult.screened_by, func.count(ScanResult.id)
+    ).group_by(ScanResult.screened_by).order_by(
+        func.count(ScanResult.id).desc()
+    ).limit(5).all()
+    top_screeners = {row[0]: row[1] for row in screeners if row[0]}
+
     daily_scans = {}
     for i in range(6, -1, -1):
         day = datetime.utcnow().date() - timedelta(days=i)
@@ -159,6 +214,11 @@ def get_analytics(db: Session = Depends(get_db)):
     return {
         "total_scans": total_scans,
         "abnormal_percentage": abnormal_pct,
+        "normal_percentage": normal_pct,
+        "verified_count": verified_count,
+        "pending_count": pending_count,
+        "avg_confidence": avg_confidence,
         "condition_distribution": condition_dist,
-        "daily_scans": daily_scans
+        "top_screeners": top_screeners,
+        "daily_scans": daily_scans,
     }

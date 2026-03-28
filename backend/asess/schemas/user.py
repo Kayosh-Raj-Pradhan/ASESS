@@ -17,7 +17,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
-    role: Literal["doctor", "staff", "admin"] = "staff"
+    role: Literal["superadmin", "admin", "doctor", "staff"] = "staff"
 
     @validator('password')
     def password_complexity(cls, v):
@@ -43,5 +43,5 @@ class Token(BaseModel):
     token_type: str = "bearer"
 
 class UserUpdate(BaseModel):
-    role: Literal["doctor", "staff", "admin"] | None = None
+    role: Literal["superadmin", "admin", "doctor", "staff"] | None = None
     is_active: bool | None = None
