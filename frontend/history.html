@@ -21,7 +21,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
                     <h2><i class="ri-scan-line" style="margin-right:8px;"></i>AI Screening History</h2>
                     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <input type="text" id="scanSearchInput" class="search-input" placeholder="🔍 Search scans..." oninput="filterScanTable()">
+                        <input type="text" id="scanSearchInput" class="search-input" placeholder=" Search scans..." oninput="filterScanTable()">
                         <button class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;" onclick="loadScanHistory()"><i class="ri-refresh-line"></i> Refresh</button>
                     </div>
                 </div>
@@ -38,7 +38,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
                     <h2><i class="ri-eye-line" style="margin-right:8px;"></i>General Eye Test History</h2>
                     <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                        <input type="text" id="eyeTestSearchInput" class="search-input" placeholder="🔍 Search eye tests..." oninput="filterEyeTestTable()">
+                        <input type="text" id="eyeTestSearchInput" class="search-input" placeholder=" Search eye tests..." oninput="filterEyeTestTable()">
                         <a href="/test/" class="btn btn-primary" style="padding: 10px 20px; font-size: 0.9rem;">+ New Eye Test</a>
                     </div>
                 </div>
@@ -102,7 +102,7 @@
                             <td style="color:#334155;">${s.screened_by || '—'}</td>
                             <td>
                                 <div style="display:flex; gap:8px; align-items:center;">
-                                    <a href="/report?id=${s.id}" style="display:inline-block; padding:6px 16px; background:#0d9488; color:#fff; border-radius:6px; font-size:0.82rem; font-weight:600; text-decoration:none; white-space:nowrap;">View</a>
+                                    <a href="/report?id=${s.id}" style="display:inline-block; padding:6px 16px; background:#1565c0; color:#fff; border-radius:6px; font-size:0.82rem; font-weight:600; text-decoration:none; white-space:nowrap;">View</a>
                                     <button onclick="confirmDeleteScan(${s.id}, '${s.patient_name.replace(/'/g, "\\'")}', '${s.patient_id || ''}')" style="padding:6px 14px; background:transparent; color:#dc2626; border:1.5px solid #dc2626; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap;">Delete</button>
                                 </div>
                             </td>
@@ -205,10 +205,10 @@
                         <tbody>`;
 
             sorted.forEach(entry => {
-                const ishStyle = entry.ishihara.status === 'Normal' ? 'color:#0d9488; font-weight:600;' : 'color:#1565c0; font-weight:600;';
-                const snStyle = entry.snellen.status === 'Normal' ? 'color:#0d9488; font-weight:600;' : 'color:#1565c0; font-weight:600;';
-                const ctStyle = entry.contrast.status === 'Normal' ? 'color:#0d9488; font-weight:600;' : 'color:#1565c0; font-weight:600;';
-                const overallStyle = entry.overallStatus === 'Normal' ? 'color:#15803d; font-weight:600;' : 'color:#0891b2; font-weight:600;';
+                const ishStyle = 'color:#1565c0; font-weight:600;';
+                const snStyle = 'color:#1565c0; font-weight:600;';
+                const ctStyle = 'color:#1565c0; font-weight:600;';
+                const overallStyle = 'color:#1565c0; font-weight:600;';
 
                 tableHtml += `
                     <tr>
@@ -219,7 +219,12 @@
                         <td style="${ctStyle}">${entry.contrast.status || '—'}</td>
                         <td style="${overallStyle}">${entry.overallStatus}</td>
                         <td style="color:#334155;">${entry.screenedBy}</td>
-                        <td><a href="/eye-test-report?id=${entry.id}" class="table-action" style="color:#0d9488;">View Report</a></td>
+                        <td>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <a href="/eye-test-report?id=${entry.id}" style="display:inline-block; padding:6px 16px; background:#1565c0; color:#fff; border-radius:6px; font-size:0.82rem; font-weight:600; text-decoration:none; white-space:nowrap;">View</a>
+                                <button onclick="confirmDeleteEyeTest('${entry.id}', '${entry.patientName.replace(/'/g, "\\'")}')" style="padding:6px 14px; background:transparent; color:#dc2626; border:1.5px solid #dc2626; border-radius:6px; font-size:0.82rem; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap;">Delete</button>
+                            </div>
+                        </td>
                     </tr>`;
             });
 
@@ -228,6 +233,48 @@
         }
 
         loadEyeTestHistory();
+
+        // ─── Delete Eye Test Confirmation ───
+        function confirmDeleteEyeTest(testId, patientName) {
+            const exist = document.getElementById('deleteEyeTestModal');
+            if (exist) exist.remove();
+
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.id = 'deleteEyeTestModal';
+            overlay.innerHTML = `
+                <div class="modal-card" style="text-align:center; max-width:420px;">
+                    <div style="font-size:2.5rem; margin-bottom:10px;">🗑️</div>
+                    <h3 style="margin-bottom:8px;">Delete Eye Test?</h3>
+                    <p style="color:#64748b; margin-bottom:18px; font-size:0.9rem;">This will permanently remove this test record.</p>
+                    <div style="margin-bottom:20px; padding:12px; background:#fef2f2; border-radius:10px; border:1px solid #fecaca;">
+                        <p style="margin:0; color:#dc2626; font-weight:600; font-size:0.92rem;">${patientName}</p>
+                    </div>
+                    <p style="color:#ef4444; font-size:0.8rem; margin-bottom:18px; font-weight:500;">This action cannot be undone.</p>
+                    <div style="display:flex; gap:10px; justify-content:center;">
+                        <button onclick="closeDeleteEyeTestModal()" style="padding:10px 24px; background:#f0f4f8; border:1px solid #e2e8f0; border-radius:10px; cursor:pointer; font-weight:600; font-family:inherit; color:#475569;">Cancel</button>
+                        <button id="confirmDeleteEyeTestBtn" style="padding:10px 24px; background:#dc2626; color:#fff; border:none; border-radius:10px; cursor:pointer; font-weight:600; font-family:inherit;">Delete</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            overlay.addEventListener('click', (e) => { if (e.target === overlay) closeDeleteEyeTestModal(); });
+
+            document.getElementById('confirmDeleteEyeTestBtn').addEventListener('click', () => {
+                let history = JSON.parse(localStorage.getItem('eyeTestHistory') || '[]');
+                history = history.filter(entry => entry.id !== testId);
+                localStorage.setItem('eyeTestHistory', JSON.stringify(history));
+                
+                closeDeleteEyeTestModal();
+                showToast('Eye test deleted successfully', 'success');
+                loadEyeTestHistory();
+            });
+        }
+
+        function closeDeleteEyeTestModal() {
+            const m = document.getElementById('deleteEyeTestModal');
+            if (m) m.remove();
+        }
 
         // ─── Search Filters ───
         function filterScanTable() {

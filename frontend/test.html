@@ -151,8 +151,8 @@
                         <input type="text" id="patientName" placeholder="Enter patient name" required style="width:100%; padding:10px 14px; border:1.5px solid var(--card-border); border-radius:10px; background:#f8fafc; color:var(--headline); font-size:0.95rem; font-family:var(--font);">
                     </div>
                     <div style="flex:1; min-width:200px;">
-                        <label style="display:block; margin-bottom:6px; color:var(--subhead); font-weight:600; font-size:0.85rem;">Patient ID *</label>
-                        <input type="text" id="patientId" placeholder="Patient ID (e.g. ABC123)" required style="width:100%; padding:10px 14px; border:1.5px solid var(--card-border); border-radius:10px; background:#f8fafc; color:var(--headline); font-size:0.95rem; font-family:var(--font);">
+                        <label style="display:block; margin-bottom:6px; color:var(--subhead); font-weight:600; font-size:0.85rem;">Patient ID <span style="font-size:0.75rem; color:#1565c0; background:#e0f2fe; padding:1px 8px; border-radius:10px; margin-left:4px;">Auto-generated</span></label>
+                        <input type="text" id="patientId" readonly style="width:100%; padding:10px 14px; border:1.5px solid var(--card-border); border-radius:10px; background:#f0f4ff; color:#1565c0; font-size:0.95rem; font-weight:600; cursor:not-allowed; font-family:var(--font);">
                     </div>
                     <button class="btn btn-primary" id="startTestsBtn" style="padding:10px 28px;">Start Tests</button>
                 </div>
@@ -172,7 +172,7 @@
                 <div class="test-panel" id="test-ishihara">
                     <div class="ish-container">
                         <div class="ish-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <h3 style="margin:0; font-size:1.4rem;">Ishihara Test</h3>
+                            <h3 style="margin:0; font-size:1.4rem; color:#ffffff;">Ishihara Test</h3>
                             <span style="font-size:0.9rem; color:#aaaaaa;">Plate <strong id="plateCounter" style="color:#ffffff;">1</strong> / <span id="totalPlates">14</span></span>
                         </div>
                         <div class="ish-progress-bar"><div class="ish-progress-fill" id="ishProgressFill" style="width:0%"></div></div>
@@ -261,7 +261,7 @@
                 <div class="test-panel" id="test-perception" style="display:none;">
                     <div class="blind-container">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                            <h3 style="margin:0; font-size:1.4rem;">Visual Perception Test</h3>
+                            <h3 style="margin:0; font-size:1.4rem; color:#ffffff;">Visual Perception Test</h3>
                             <span style="font-size:0.9rem; color:#94a3b8;">Question <strong id="percCounter" style="color:#ffffff;">1</strong> / <span id="percTotal">8</span></span>
                         </div>
                         <div class="ish-progress-bar"><div class="ish-progress-fill" id="percProgressFill" style="width:0%"></div></div>
@@ -368,16 +368,52 @@
         }
     })();
 
-    document.getElementById('startTestsBtn').addEventListener('click', () => {
+    // ───── Auto-generate Patient ID or pre-fill from URL (Scan Again) ─────
+    (async function initPatientInfo() {
+        const params = new URLSearchParams(window.location.search);
+        const urlName = params.get('patientName');
+        const urlId = params.get('patientId');
+
+        if (urlName && urlId) {
+            // "Scan Again" / existing patient flow
+            document.getElementById('patientName').value = urlName;
+            document.getElementById('patientId').value = urlId;
+            document.getElementById('patientName').setAttribute('readonly', true);
+            document.getElementById('patientName').style.background = '#f0f4ff';
+            document.getElementById('patientName').style.color = '#1565c0';
+            document.getElementById('patientName').style.fontWeight = '600';
+            document.getElementById('patientName').style.cursor = 'not-allowed';
+        } else {
+            // New patient: auto-generate next patient ID
+            try {
+                const resp = await fetch('/ai/next-patient-id');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    document.getElementById('patientId').value = data.patient_id;
+                } else {
+                    document.getElementById('patientId').value = 'PAT' + String(Date.now() % 1000).padStart(3, '0');
+                }
+            } catch(e) {
+                document.getElementById('patientId').value = 'PAT' + String(Date.now() % 1000).padStart(3, '0');
+            }
+        }
+    })();
+
+    document.getElementById('startTestsBtn').addEventListener('click', async () => {
         const pn = document.getElementById('patientName').value.trim();
         const pid = document.getElementById('patientId').value.trim();
         if (!pn) { showToast('Please enter patient name', 'warning'); document.getElementById('patientName').focus(); return; }
-        if (!pid) { showToast('Please enter patient ID', 'warning'); document.getElementById('patientId').focus(); return; }
-        if (!/^[A-Za-z]{3}[0-9]{3}$/.test(pid)) { showToast('Patient ID must be 3 letters + 3 numbers (e.g. ABC123)', 'warning'); document.getElementById('patientId').focus(); return; }
-        // Check for duplicate patient ID in eye test history
-        const existingTests = JSON.parse(localStorage.getItem('eyeTestHistory') || '[]');
-        const duplicate = existingTests.find(t => t.patientId && t.patientId.toUpperCase() === pid.toUpperCase() && t.patientName.toLowerCase() !== pn.toLowerCase());
-        if (duplicate) { showToast(`Patient ID ${pid.toUpperCase()} is already assigned to "${duplicate.patientName}"`, 'warning'); document.getElementById('patientId').focus(); return; }
+        if (!pid) { showToast('Patient ID not generated. Please refresh.', 'warning'); return; }
+
+        // Register patient in backend for consistency
+        try {
+            const formData = new FormData();
+            formData.append('patient_name', pn);
+            formData.append('patient_id', pid);
+            formData.append('created_by', userName || 'System');
+            await fetch('/ai/register-patient', { method: 'POST', body: formData });
+        } catch(e) { /* non-critical */ }
+
         document.getElementById('testArea').style.display = 'block';
         document.getElementById('patientCard').style.display = 'none';
         buildProgress();

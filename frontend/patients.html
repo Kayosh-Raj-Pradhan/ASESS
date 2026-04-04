@@ -103,7 +103,7 @@
                     const lastDate = p.latestDate ? new Date(p.latestDate).toLocaleDateString() : '—';
                     const conditionsArr = Array.from(p.conditions);
                     const hasAbnormal = conditionsArr.some(c => c !== 'Normal');
-                    const statusColor = hasAbnormal ? '#ef4444' : '#16a34a';
+                    const statusColor = hasAbnormal ? '#1565c0' : '#16a34a';
                     const statusText = hasAbnormal ? 'Needs Attention' : 'Healthy';
 
                     html += `
